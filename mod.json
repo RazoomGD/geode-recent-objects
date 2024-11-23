@@ -1,0 +1,41 @@
+{
+	"geode": "4.0.0",
+	"gd": {
+		"win": "2.2074",
+		"android": "2.2074",
+		"mac": "2.2074",
+		"ios": "2.2074"
+	},
+	"id": "razoom.recent_objects",
+	"name": "Recent Objects",
+	"version": "v1.0.0",
+	"developer": "RaZooM",
+	"description": "Adds editor tab for recently used objects",
+	"dependencies": [
+		{
+			"id": "geode.node-ids",
+			"importance": "required",
+			"version": ">=1.17.0"
+		},
+		{
+            "id": "alphalaneous.editortab_api",
+            "version": ">=1.0.7",
+            "importance": "required"
+        }
+	],
+	"settings": {
+		"max-count": {
+			"type": "int",
+			"name": "Max elements",
+			"description": "The maximum number of displayed recent objects",
+			"default": 20,
+			"min": 5,
+			"max": 100,
+			"control": {
+				"arrows": true,
+				"arrow-step": 1,
+				"input": true
+			}
+		}
+	}
+}
