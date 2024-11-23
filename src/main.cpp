@@ -1,13 +1,3 @@
-#include <Geode/Geode.hpp>
-#include <Geode/modify/EditorUI.hpp>
-
-#include <alphalaneous.editortab_api/include/EditorTabs.hpp>
-
-#include <list>
-#include <set>
-#include <string>
-#include <sstream>
-
 #include "config.hpp"
 
 using namespace geode::prelude;
