@@ -95,10 +95,10 @@ class $modify(MyEditorUI, EditorUI) {
 		m_fields->m_activeBtn = nullptr;
 	}
 
-	void onDebugButton(CCObject*) {
-		log::debug("registered: {}; size_1: {}; size_2: {}", 
-			this->m_createButtonArray->count(), m_fields->m_rList.size(), m_fields->m_rSet.size());
-	}
+	// void onDebugButton(CCObject*) {
+	// 	log::debug("registered: {}; size_1: {}; size_2: {}", 
+	// 		this->m_createButtonArray->count(), m_fields->m_rList.size(), m_fields->m_rSet.size());
+	// }
 
 	// get create button with the right color and my custom selector
 	CreateMenuItem* advancedGetCreateBtn(int id) {
@@ -113,7 +113,9 @@ class $modify(MyEditorUI, EditorUI) {
 
 	CreateMenuItem* getDeleteButton() {
 		auto cmi = getCreateBtn(83, 6);
-		this->m_createButtonArray->removeLastObject();
+		if (this->m_createButtonArray->lastObject() == cmi) {
+			this->m_createButtonArray->removeLastObject();
+		}
 		auto btnSpr = static_cast<ButtonSprite*>(cmi->getChildren()->objectAtIndex(0));
 		auto children = btnSpr->getChildren();
 		for (unsigned i = 0; i < children->count(); i++) {
@@ -181,6 +183,7 @@ class $modify(MyEditorUI, EditorUI) {
 		if (m_fields->m_reloadRequired || !m_fields->m_myBar->m_buttonArray->count()) {
 			reloadBar();
 			m_fields->m_reloadRequired = false;
+			updateCreateMenu(false); // false - no jump to another page
 		}
 		activateButtonOnMyBar();
     }
