@@ -2,15 +2,18 @@
 	"geode": "4.0.0",
 	"gd": {
 		"win": "2.2074",
-		"android": "2.2074",
-		"mac": "2.2074",
-		"ios": "2.2074"
+		"android": "2.2074"
 	},
 	"id": "razoom.recent_objects",
 	"name": "Recent Objects",
 	"version": "v1.0.0",
 	"developer": "RaZooM",
-	"description": "Adds editor tab for recently used objects",
+	"tags": ["editor", "utility"],
+	"links": {
+		"source": "https://github.com/RazoomGD/geode-recent-objects",
+		"community": "https://discord.gg/wcWvtKHP8n"
+	},
+	"description": "Adds an editor tab for recently used objects",
 	"dependencies": [
 		{
 			"id": "geode.node-ids",
@@ -23,6 +26,11 @@
             "importance": "required"
         }
 	],
+	"resources": {
+		"sprites": [
+			"resources/screenshot-1.png"
+		]
+	},
 	"settings": {
 		"max-count": {
 			"type": "int",
