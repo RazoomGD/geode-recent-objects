@@ -2,11 +2,13 @@
 	"geode": "4.0.0",
 	"gd": {
 		"win": "2.2074",
-		"android": "2.2074"
+		"android": "2.2074",
+		"mac": "2.2074",
+		"ios": "2.2074"
 	},
 	"id": "razoom.recent_objects",
 	"name": "Recent Objects",
-	"version": "v1.0.0",
+	"version": "v1.0.1",
 	"developer": "RaZooM",
 	"tags": ["editor", "utility"],
 	"links": {
@@ -28,7 +30,7 @@
 	],
 	"resources": {
 		"sprites": [
-			"resources/screenshot-1.png"
+			"razoom.recent_objects/screenshot-1.png"
 		]
 	},
 	"settings": {
