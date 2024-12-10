@@ -272,14 +272,13 @@ class $modify(MyEditorUI, EditorUI) {
 	}
 
 	$override
-	bool onCreate() {
-		bool ret = EditorUI::onCreate();
+	void onCreateButton(CCObject* sender) {
+		EditorUI::onCreateButton(sender);
 		short objId = this->m_selectedObjectIndex;
 		if (objId > 0) {
 			handleNewObject(objId);
 			m_fields->m_reloadRequired = true;
 		}
-		return ret;
 	}
 
 	void handleNewObject(short objId, bool isDelete=false) {
