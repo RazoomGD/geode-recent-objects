@@ -123,11 +123,13 @@ class $modify(MyEditorUI, EditorUI) {
 				auto spr = CCSprite::createWithSpriteFrameName("edit_delCBtn_001.png");
 				btnSpr->addChild(spr, child->getZOrder());
 				spr->setPosition(child->getPosition());
-				child->setOpacity(0);
+				// child->setOpacity(0);
+				child->removeFromParent();
 				break;
 			}
 		}
 		cmi->m_pfnSelector = menu_selector(MyEditorUI::onDeleteClick); 
+		cmi->m_objectID = 0;
 		return cmi;
 	}
 
