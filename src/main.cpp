@@ -263,7 +263,7 @@ class $modify(MyEditorUI, EditorUI) {
 	// make button on my bar activated if its object is selected in another tab now
 	void activateButtonOnMyBar() {
 		m_fields->m_activeBtn = nullptr;
-		for (unsigned i = 0; i < m_fields->m_myBar->m_buttonArray->count(); i++) {
+		for (unsigned i = 0; i < m_fields->m_myBar->m_buttonArray->count() - 1; i++) {
 			auto cmi = static_cast<CreateMenuItem*>(m_fields->m_myBar->m_buttonArray->objectAtIndex(i));
 			if (cmi->m_objectID == this->m_selectedObjectIndex) {
 				toggleButton(cmi, true);
