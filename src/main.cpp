@@ -70,6 +70,7 @@ class $modify(MyEditorUI, EditorUI) {
 			m_fields->m_activeBtn = cmi;
 		} else {
 			toggleButton(cmi, false);
+			m_fields->m_activeBtn = nullptr;
 		}
 	}
 
