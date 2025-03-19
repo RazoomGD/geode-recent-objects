@@ -4,7 +4,7 @@ While building something in editor, you often use specific objects repeatedly.
 Quick access to these objects reduces the time spent searching through extensive menus, 
 making the level creation process faster and more efficient.
 
-![screenshot](razoom.recent_objects/screenshot-1.png)
+![](razoom.recent_objects/screenshot-1.png)
 
 ## Contribution
 

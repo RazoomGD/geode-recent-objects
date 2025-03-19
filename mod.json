@@ -8,7 +8,7 @@
 	},
 	"id": "razoom.recent_objects",
 	"name": "Recent Objects",
-	"version": "v1.0.3",
+	"version": "v1.0.4",
 	"developer": "RaZooM",
 	"tags": ["editor", "utility"],
 	"links": {
@@ -30,7 +30,8 @@
 	],
 	"resources": {
 		"sprites": [
-			"razoom.recent_objects/screenshot-1.png"
+			"razoom.recent_objects/screenshot-1.png",
+			"resources/*.png"
 		]
 	},
 	"settings": {
@@ -46,6 +47,12 @@
 				"arrow-step": 1,
 				"input": true
 			}
+		},
+		"show-freeze-btn": {
+			"type": "bool",
+			"name": "Show 'freeze' button",
+			"description": "When the button is active, new objects will not be added to the tab.",
+			"default": true
 		}
 	}
 }

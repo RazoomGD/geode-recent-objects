@@ -15,15 +15,17 @@ class $modify(MyEditorUI, EditorUI) {
 	struct Fields {
 		// settings
 		short m_totalButtons = 20;
-
+		
 		// editor things
 		bool m_reloadRequired = false;
-
+		bool m_isFreezeMode = false;
+		
 		Ref<EditButtonBar> m_myBar;
 		Ref<EditButtonBar> m_otherBar;
 		Ref<CreateMenuItem> m_activeBtn;
 		Ref<CreateMenuItem> m_deleteBtn;
-
+		Ref<CreateMenuItem> m_freezeBtn;
+		
 		// set and list with recent objects
 		std::set<short> m_rSet;
 		std::list<short> m_rList;
@@ -31,7 +33,9 @@ class $modify(MyEditorUI, EditorUI) {
 		Fields () {
 			// get settings
 			m_totalButtons = Mod::get()->getSettingValue<int64_t>("max-count");
-
+			
+			m_isFreezeMode = Mod::get()->getSavedValue<bool>("is-freezed", false);
+			
 			// load data
 			auto saveStr = Mod::get()->getSavedValue<std::string>("recent");
 			std::istringstream ss(saveStr);
@@ -43,7 +47,7 @@ class $modify(MyEditorUI, EditorUI) {
 					i++;
 				}
 			}
-			log::debug("Loaded {}/{} items", m_rSet.size(), m_totalButtons);
+			// log::debug("Loaded {}/{} items", m_rSet.size(), m_totalButtons);
 		};
 
 		~Fields () {
@@ -53,23 +57,23 @@ class $modify(MyEditorUI, EditorUI) {
 				save += std::to_string(id) + ",";
 			}
 			Mod::get()->setSavedValue<std::string>("recent", save);
-			log::debug("Saved {} items", m_rSet.size());
+			Mod::get()->setSavedValue<bool>("is-freezed", m_isFreezeMode);
+			// log::debug("Saved {} items", m_rSet.size());
 		};
 	};
 
 	// custom selector for create buttons in my tab
 	void onItemClick(CCObject* sender) {
 		auto cmi = static_cast<CreateMenuItem*>(sender);
-		auto selInfo = static_cast<SelInfo*>(cmi->getUserObject());
-		auto method = static_cast< void(CCObject::*)(CCObject*) >(selInfo->m_defaultSelector); // kill me
+		auto selInfo = static_cast<SelInfo*>(cmi->getUserObject("selInfo"_spr));
 
-		(this->*method)(sender); // call original selector
+		(cmi->m_pListener->*(selInfo->m_defaultSelector))(sender); // call original selector
 
 		if (this->m_selectedObjectIndex == cmi->m_objectID) {
-			toggleButton(cmi, true);
+			setColorToCreateButton(cmi, false);
 			m_fields->m_activeBtn = cmi;
 		} else {
-			toggleButton(cmi, false);
+			setColorToCreateButton(cmi, true);
 			m_fields->m_activeBtn = nullptr;
 		}
 	}
@@ -85,21 +89,15 @@ class $modify(MyEditorUI, EditorUI) {
 
 		reloadBar(false); // to show changes
 		onItemClick(m_fields->m_activeBtn); // deselect button
-
-		// unregister button
-		for (int iter = this->m_createButtonArray->count() - 1; iter >= 0; iter--) {
-			if (m_fields->m_activeBtn == this->m_createButtonArray->objectAtIndex(iter)) {
-				this->m_createButtonArray->removeObjectAtIndex(iter);
-				break;
-			}
-		}
+		unregisterButton(m_fields->m_activeBtn);
 		m_fields->m_activeBtn = nullptr;
 	}
 
-	// void onDebugButton(CCObject*) {
-	// 	log::debug("registered: {}; size_1: {}; size_2: {}", 
-	// 		this->m_createButtonArray->count(), m_fields->m_rList.size(), m_fields->m_rSet.size());
-	// }
+	// selector for freeze button in my tab
+	void onFreezeClick(CCObject* btn) {
+		m_fields->m_isFreezeMode = !m_fields->m_isFreezeMode;
+		setColorToCreateButton(static_cast<CreateMenuItem*>(btn), !m_fields->m_isFreezeMode);
+	}
 
 	// get create button with the right color and my custom selector
 	CreateMenuItem* advancedGetCreateBtn(int id) {
@@ -107,30 +105,25 @@ class $modify(MyEditorUI, EditorUI) {
 		if (darkerButtonBgObjIds.contains(id)) cmi = getCreateBtn(id, 5); // darker color
 		else cmi = getCreateBtn(id, 4); // lighter color
 
-		cmi->setUserObject(new SelInfo(cmi->m_pfnSelector));
+		cmi->setUserObject("selInfo"_spr, new SelInfo(cmi->m_pfnSelector));
 		cmi->m_pfnSelector = menu_selector(MyEditorUI::onItemClick); 
 		return cmi;
 	}
 
 	CreateMenuItem* getDeleteButton() {
-		auto cmi = getCreateBtn(83, 6);
-		if (this->m_createButtonArray->lastObject() == cmi) {
-			this->m_createButtonArray->removeLastObject();
-		}
-		auto btnSpr = static_cast<ButtonSprite*>(cmi->getChildren()->objectAtIndex(0));
-		auto children = btnSpr->getChildren();
-		for (unsigned i = 0; i < children->count(); i++) {
-			if (auto child = typeinfo_cast<GameObject*>(children->objectAtIndex(i))) {
-				auto spr = CCSprite::createWithSpriteFrameName("edit_delCBtn_001.png");
-				btnSpr->addChild(spr, child->getZOrder());
-				spr->setPosition(child->getPosition());
-				// child->setOpacity(0);
-				child->removeFromParent();
-				break;
-			}
-		}
-		cmi->m_pfnSelector = menu_selector(MyEditorUI::onDeleteClick); 
+		auto btnSpr = ButtonSprite::create(CCSprite::createWithSpriteFrameName("edit_delCBtn_001.png"), 32, 0, 32, 1, true, "GJ_button_06.png", true);
+		auto cmi = CreateMenuItem::create(btnSpr, nullptr, this, menu_selector(MyEditorUI::onDeleteClick));
 		cmi->m_objectID = 0;
+		return cmi;
+	}
+
+	CreateMenuItem* getFreezeButton() {
+		auto btnSpr = ButtonSprite::create(CCSprite::create("snowflake.png"_spr), 32, 0, 32, 1, true, "GJ_button_02.png", true);
+		auto cmi = CreateMenuItem::create(btnSpr, nullptr, this, menu_selector(MyEditorUI::onFreezeClick));
+		cmi->m_objectID = 0;
+		if (m_fields->m_isFreezeMode) {
+			setColorToCreateButton(cmi, false);
+		}
 		return cmi;
 	}
 
@@ -140,36 +133,27 @@ class $modify(MyEditorUI, EditorUI) {
 
 		m_fields->m_otherBar = static_cast<EditButtonBar*>(this->m_createButtonBars->objectAtIndex(0));
 		m_fields->m_deleteBtn = getDeleteButton();
+		if (Mod::get()->getSettingValue<bool>("show-freeze-btn")) {
+			m_fields->m_freezeBtn = getFreezeButton();
+		} else {
+			m_fields->m_isFreezeMode = false;
+		}
 
 		EditorTabs::get()->addTab(this, TabType::BUILD, "recent-objects-tab"_spr, 
 			create_tab_callback(MyEditorUI::loadMyTab),
 			toggle_tab_callback(MyEditorUI::toggleMyTab));
-
-		// debug button
-		// auto myButton = CCMenuItemSpriteExtra::create(
-		// 	CCSprite::createWithSpriteFrameName("GJ_likeBtn_001.png"),
-		// 	this, menu_selector(MyEditorUI::onDebugButton)
-		// );
-		// auto menu = this->getChildByID("undo-menu");
-		// menu->addChild(myButton);
-		// menu->updateLayout();
 
 		return true;
 	}
 
 	// on first load
 	CCNode* loadMyTab(EditorUI* ui, CCMenuItemToggler* toggler) {
-		// create icon for build tab
-		auto icon = CCSprite::createWithSpriteFrameName("GJ_sRecentIcon_001.png");
-        EditorTabUtils::setTabIcon(toggler, icon);
-		
+        EditorTabUtils::setTabIcon(toggler, CCSprite::createWithSpriteFrameName("GJ_sRecentIcon_001.png"));
 		// init the tab with empty array
 		auto cols = GameManager::sharedState()->getIntGameVariable("0049");
 		auto rows = GameManager::sharedState()->getIntGameVariable("0050");
-
 		m_fields->m_myBar = EditButtonBar::create(CCArray::create(), m_fields->m_otherBar->m_position, 30, true, cols, rows);
 		m_fields->m_reloadRequired = true;
-
         return m_fields->m_myBar;
     }
 
@@ -195,14 +179,9 @@ class $modify(MyEditorUI, EditorUI) {
 	void reloadBar(bool fullReload=true) {
 		if (fullReload) {
 			// unregister old buttons
-			int iter = this->m_createButtonArray->count() - 1;
-			for (int i = m_fields->m_myBar->m_buttonArray->count() - 2; i >= 0; i--) {
-				for (;iter >= 0; iter--) {
-					if (m_fields->m_myBar->m_buttonArray->objectAtIndex(i) == this->m_createButtonArray->objectAtIndex(iter)) {
-						this->m_createButtonArray->removeObjectAtIndex(iter);
-						break;
-					}
-				}
+			for (auto* btn : CCArrayExt<CreateMenuItem*>(m_fields->m_myBar->m_buttonArray)) {
+				if (btn->m_objectID == 0) break;
+				unregisterButton(btn);
 			}
 			// clear old buttons
 			m_fields->m_myBar->m_buttonArray->removeAllObjects();
@@ -213,62 +192,97 @@ class $modify(MyEditorUI, EditorUI) {
 				m_fields->m_myBar->m_buttonArray->addObject(btn);
 			}
 			m_fields->m_myBar->m_buttonArray->addObject(m_fields->m_deleteBtn); // add delete button
+			if (m_fields->m_freezeBtn) {
+				m_fields->m_myBar->m_buttonArray->addObject(m_fields->m_freezeBtn); // add freeze button
+			}
 		}
-		// if (m_fields->m_myBar->m_buttonArray->count()) {
-		// 	auto first = static_cast<CCNode*>(m_fields->m_myBar->m_buttonArray->objectAtIndex(0));
-		// 	if (auto btnSpr = typeinfo_cast<ButtonSprite*>(first->getChildren()->objectAtIndex(0))) {
-		// 		if (auto btnChildren = btnSpr->getChildren()) {
-		// 			for (unsigned i = 0; i < btnChildren->count(); i++) {
-		// 				if (auto gameObj = typeinfo_cast<GameObject*>(btnChildren->objectAtIndex(i))) {
-		// 					// prevent Object Groups (yeah, my other mod...) from adding groups to the tab
-		// 					gameObj->m_objectID = 83; 
-		// 					break;
-		// 				}
-		// 			}
-		// 		}
-		// 	}
-		// }
+
 		auto cols = GameManager::sharedState()->getIntGameVariable("0049");
 		auto rows = GameManager::sharedState()->getIntGameVariable("0050");
 		m_fields->m_myBar->loadFromItems(m_fields->m_myBar->m_buttonArray, cols, rows, true); // reload
 	}
 
-	// activated button is darker then others
-	void toggleButton(CreateMenuItem* cmi, bool activate) {
-		float ratio = activate ? .5f : 2.f;
-		auto btnSpr = typeinfo_cast<ButtonSprite*>(cmi->getChildren()->objectAtIndex(0));
-		if (!btnSpr) return; 
-		if (auto ch = btnSpr->getChildren()) recursiveSetChildrenColor(ratio, ch);
-	}
 
-	// this is called only from toggleButton() function 
-	void recursiveSetChildrenColor(float ratio, CCArray* array) {
-		for (unsigned i = 0; i < array->count(); i++) {
-			auto child = typeinfo_cast<CCSprite*>(array->objectAtIndex(i));
-			if (!child) continue;
-			auto c = child->getColor();
-			if (ratio < 1) child->setColor(ccc3(
-				(uint8_t) (c.r < 128 ? c.r : c.r * ratio), 
-				(uint8_t) (c.g < 128 ? c.g : c.g * ratio), 
-				(uint8_t) (c.b < 128 ? c.b : c.b * ratio)
-			));
-			else child->setColor(ccc3(
-				(uint8_t) (c.r < 128 ? c.r * ratio : c.r), 
-				(uint8_t) (c.g < 128 ? c.g * ratio : c.g), 
-				(uint8_t) (c.b < 128 ? c.b * ratio : c.b)
-			));
-			if (auto ch = child->getChildren()) recursiveSetChildrenColor(ratio, ch);
+	void setColorToCreateButton(CreateMenuItem* cmi, bool isBright) {
+		// ! mostly decompiled code of EditorUI::updateCreateMenu() that sets the color
+
+		ccColor3B color = isBright ? ccc3(255, 255, 255) : ccc3(127, 127, 127);
+		if (auto spr = cmi->getChildByType<ButtonSprite>(0)) {
+			if (spr->m_subBGSprite) {
+				spr->m_subBGSprite->setColor(color); // button bg sprite
+			}
+			if (auto gameObj = typeinfo_cast<GameObject*>(spr->m_subSprite)) {
+				int objId;
+				if (gameObj->m_classType == 1) {
+					bool cVar14;
+					if (gameObj->m_customColorType == 0) {
+						cVar14 = gameObj->m_maybeNotColorable;
+					} else {
+						cVar14 = (gameObj->m_customColorType == 1);
+					}
+					if (cVar14 || gameObj->m_colorSprite || 
+						gameObj->m_baseColor->m_defaultColorID == 0x3ec || 
+						gameObj->m_baseColor->m_defaultColorID == 0x0  || 
+						/* (*(char *)(gameObj + 0xdf) == '\0') */ false) {
+						goto LAB_14010da56;
+					}
+					color = isBright ? ccc3(200, 200, 255) : ccc3(100, 100, 127);
+					goto LAB_14010dac2;
+				}
+	LAB_14010da56:
+				objId = gameObj->m_objectID;
+				bool bVar12;
+				if (objId < 0x531) {
+					if (((objId == 0x530) || (objId == 0x396)) || (objId == 0x397)) goto LAB_14010daad;
+					bVar12 = (objId == 0x52f);
+	LAB_14010da89:
+					if (bVar12) goto LAB_14010daad;
+					auto piVar3 = gameObj->m_baseColor;
+					if (piVar3 != 0) {
+						objId = piVar3->m_colorID;
+						if ((piVar3->m_defaultColorID == objId) || (objId == 0x0)) {
+							objId = piVar3->m_defaultColorID;
+						}
+						if (objId == 0x3f2) goto LAB_14010daad;
+					}
+				}
+				else {
+					if (objId != 0x630) {
+						bVar12 = (objId == 0x7dc);
+						goto LAB_14010da89;
+					}
+	LAB_14010daad:
+					color = isBright ? ccc3(0, 0, 0) : ccc3(127, 127, 127);
+				}
+	LAB_14010dac2:
+				gameObj->setObjectColor(color);
+				color = isBright ? ccc3(200, 200, 255) : ccc3(100, 100, 127);
+				gameObj->setChildColor(color);
+
+			} else if (spr->m_subSprite) {
+				spr->m_subSprite->setColor(color);
+			}
 		}
 	}
 
 	// make button on my bar activated if its object is selected in another tab now
 	void activateButtonOnMyBar() {
 		m_fields->m_activeBtn = nullptr;
-		for (unsigned i = 0; i < m_fields->m_myBar->m_buttonArray->count() - 1; i++) {
+		for (unsigned i = 0; i < m_fields->m_myBar->m_buttonArray->count(); i++) {
 			auto cmi = static_cast<CreateMenuItem*>(m_fields->m_myBar->m_buttonArray->objectAtIndex(i));
-			if (cmi->m_objectID == this->m_selectedObjectIndex) {
-				toggleButton(cmi, true);
+			if (cmi->m_objectID == 0) break; // reached delete button
+			if (cmi->m_objectID == m_selectedObjectIndex) {
+				setColorToCreateButton(cmi, false);
 				m_fields->m_activeBtn = cmi;
+				break;
+			}
+		}
+	}
+
+	void unregisterButton(CreateMenuItem* cmi) {
+		for (int iter = m_createButtonArray->count() - 1; iter >= 0; iter--) {
+			if (cmi == m_createButtonArray->objectAtIndex(iter)) {
+				m_createButtonArray->removeObjectAtIndex(iter);
 				break;
 			}
 		}
@@ -277,10 +291,12 @@ class $modify(MyEditorUI, EditorUI) {
 	$override
 	bool onCreate() {
 		bool ret = EditorUI::onCreate();
-		short objId = this->m_selectedObjectIndex;
-		if (objId > 0) {
-			handleNewObject(objId);
-			m_fields->m_reloadRequired = true;
+		if (!m_fields->m_isFreezeMode) {
+			short objId = m_selectedObjectIndex;
+			if (objId > 0) {
+				handleNewObject(objId);
+				m_fields->m_reloadRequired = true;
+			}
 		}
 		return ret;
 	}
@@ -290,20 +306,23 @@ class $modify(MyEditorUI, EditorUI) {
 			// move object to the front of the list
 			auto it = std::find(m_fields->m_rList.begin(), m_fields->m_rList.end(), objId);
 			if (it != m_fields->m_rList.end()) {
-				m_fields->m_rList.erase(it);
 				if (isDelete) {
+					m_fields->m_rList.erase(it);
 					m_fields->m_rSet.erase(objId);
 				} else {
+					m_fields->m_rList.erase(it);
 					m_fields->m_rList.push_front(objId);
 				}
 			}
 		} else {
-			if (m_fields->m_rList.size() >= m_fields->m_totalButtons) {
-				m_fields->m_rSet.erase(m_fields->m_rList.back());
-				m_fields->m_rList.pop_back();
+			if (!isDelete) {
+				if (m_fields->m_rList.size() >= m_fields->m_totalButtons) {
+					m_fields->m_rSet.erase(m_fields->m_rList.back());
+					m_fields->m_rList.pop_back();
+				}
+				m_fields->m_rSet.insert(objId);
+				m_fields->m_rList.push_front(objId);
 			}
-			m_fields->m_rSet.insert(objId);
-			m_fields->m_rList.push_front(objId);
 		}
 	}
 };
